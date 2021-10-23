@@ -247,7 +247,7 @@ contract MatchingPennies {
         "You can only withdraw your money during the roundover stage or waitPlayers stage");
         require(msg.sender == playersAddr[0]||msg.sender == playersAddr[1],
         "You do not have access to withdraw money from the accounts.");
-
+        require(players[msg.sender].playerBalance >0,"You do not have any balance!");
         uint256 amount = players[msg.sender].playerBalance;
         players[msg.sender].playerBalance = 0;
         uint8 _seatNumber = players[msg.sender].seatNo;
