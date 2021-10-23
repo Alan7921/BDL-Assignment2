@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 
 /*** This contract is the Coursework2 for BDL course of UoE in 2021 fall.
  * It simulates a whole procedure of the so-called MatchingPennies game.
