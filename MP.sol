@@ -20,7 +20,7 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 contract MatchingPennies {
-    // creat a struct to store the releated info of each player
+    // create a struct to store the releated info of each player
     struct player {
         // address of player
         address playerAddress;
@@ -44,7 +44,7 @@ contract MatchingPennies {
         uint8 seatNo;
     }
 
-    // creat two enum types to present that game is in which stage and whether there is someone who tried to cheat
+    // create two enum types to present that game is in which stage and whether there is someone who tried to cheat
     enum State {
         waitPlayers,
         makeDecision,
@@ -72,7 +72,7 @@ contract MatchingPennies {
     uint8 numberOfCommitments = 0;
     uint8 numberOfVerified = 0;
     uint8 numberOfViolations = 0;
-    //arraies to store address, seats and cheat condiction of players
+    //arrays to store address, seats and cheat condiction of players
     address[2] playersAddr;
     bool[2] seats;
     bool[2] cheatCondition;
