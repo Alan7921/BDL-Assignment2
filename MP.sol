@@ -13,7 +13,7 @@
  * If both players do not cheat, and the two numbers are equal, the player2 wins, else player1 wins.
  * During the roundover stage, players are allowed to continute or withdraw their money and quit the game.
  *
- * @author Xin Liu UNN: s2176226
+ * @author Xin Liu UUN: s2176226
  * @version 1.0
  */
 
