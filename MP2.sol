@@ -38,7 +38,7 @@ contract MatchingPennies {
 
 
     // use a mapping to store the details of each player
-    mapping(address => player) players;
+    mapping(address => player) public players;
     //array to show which address is in which seat, seats[0] refers to playerA, seats[1] refers to playerB
     address[2] seats;
 
@@ -66,12 +66,12 @@ contract MatchingPennies {
     function deposit() public payable {
         players[msg.sender].balance += msg.value - HAND_FEE;
         contractBalance += HAND_FEE;
-        players[msg.sender].addr = msg.sender;
-        players[msg.sender].used = true;
+        if(!players[msg.sender].used){
+            players[msg.sender].addr = msg.sender;
+            players[msg.sender].used = true;
+        }
     }
     
-
-
     /***
      * This method provides a function for players to join the game.
      * @param seatNumber either 0 or 1, which is the seat users want to choose to join the game.
@@ -404,6 +404,17 @@ contract MatchingPennies {
 
         uint256 amount = players[msg.sender].balance;
         players[msg.sender].balance = 0;
+        payable(msg.sender).transfer(amount);
+    }
+    
+    function takeProfit(uint amount) public {
+        require(amount <= contractBalance,
+        "The contract does not gain that much profit."
+        );
+        require(msg.sender == owner,
+        "You do not have access to this profit!"
+        );
+        contractBalance -= amount;
         payable(msg.sender).transfer(amount);
     }
 }
