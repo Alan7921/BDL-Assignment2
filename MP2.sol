@@ -29,8 +29,7 @@ contract MatchingPennies {
         makeDecision,
         verification,
         announcement,
-        roundover,
-        expired
+        roundover
     }
 
     //Game status Control
@@ -59,7 +58,7 @@ contract MatchingPennies {
     constructor(){
         owner = msg.sender;
         lastUpdatedTime = block.timestamp;
-        timeLimit = 10 minutes;
+        timeLimit = 5 minutes;
     }
 
     /***
@@ -68,10 +67,6 @@ contract MatchingPennies {
      * @return Nothing.
      */
     function join(uint8 seatNumber) public payable {
-        require( 
-            gameState != gameState.expired, 
-            "Game is expired, please call the endExpireation function, you would get 0.05 ether as reward."
-        );
         require(
             gameState == State.waitPlayers || gameState == State.roundover,
             "Game is ongoing, please wait for next round."
@@ -105,7 +100,9 @@ contract MatchingPennies {
 
     function quit() public{
         require(
-            gameState == State.waitPlayers || gameState == State.expired,
+            gameState == State.waitPlayers || 
+            gameState == State.expired ||
+            gameState == roundover,
             "Game is on going, you are not allowed to quit now."
         );
         require(
@@ -128,7 +125,10 @@ contract MatchingPennies {
      * @return Nothing.
      */
     function sendCommitment(bytes32 commitment) public {
-        checkExpiration();
+        require(
+            !checkExpiration(),
+            "Game is expired, please call the endExpiration to restart it."
+        );
         require(
             gameState == State.makeDecision,
             "You are not allowed to send your commitment other than the second stage."
@@ -164,6 +164,10 @@ contract MatchingPennies {
      * @return Nothing.
      */
     function verify(string calldata origin) public {
+        require(
+            !checkExpiration(),
+            "Game is expired, please call the endExpiration to restart it."
+        );
         require(
             gameState == State.verification,
             "The game is not in the verification stage now."
@@ -226,7 +230,7 @@ contract MatchingPennies {
         lastUpdatedTime = block.timestamp;
     }
     function timeOut() external returns (string memory result) {
-        require (block.timestamp >= lastUpdatedTime + timeLimit,
+        require (checkExpiration,
         "There is still time left, you could not claim time out."
         );
         require(
@@ -249,24 +253,41 @@ contract MatchingPennies {
                 result = winnerIsB();
             }
         }
-        gameState = State.expired;
         return result;
     }
 
-    function checkExpiration() internal{
-        require(gameState != State.expired, "Game is already expired.");
+    function checkExpiration() internal returns (bool isExpired){
         if(block.timestamp >= lastUpdatedTime + timeLimit){
             gameState = State.expired;
+            return true;
+        }else{
+            return false;
         }
     }
-    
+    // 
     function endExpireation() external {
-        require( gameState == State.expired, "Game is not expired");
-        gameState = State.waitPlayers;
-        delete(seats[0]);
-        delete(seats[1]);
+
+        require(checkExpiration, "Game is not expired");
+        if(gameState == State.makeDecision){
+            if(seats[0].isCommitted){
+                result = winnerIsA();
+            }else if (seats[1].isCommitted){
+                result = winnerIsB();
+            }
+        }
+        if(gameState == State.verification){
+            if(seats[0].verified){
+                result = winnerIsA();
+            }else if(seats[1].verified){
+                result = winnerIsB();
+            }
+        } 
+        if(gameState == State.announcement){
+            announcement();
+        }
         players[msg.sender].balance += 0.05 ether;
         contractBalance -= 0.05 ether;
+        gameState = State.waitPlayers;
     }
     /***
      * An internal function used to check the winner
@@ -367,6 +388,10 @@ contract MatchingPennies {
         require(
             players[msg.sender].balance > 0,
             "You do not have any ether in you banlance."
+        );
+        require(
+            players[msg.sender].joined = false,
+            "You have just joined a game, please withdraw you money after this round."
         );
 
         uint256 amount = players[msg.sender].balance;
