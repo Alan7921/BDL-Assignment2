@@ -59,7 +59,8 @@ contract MatchingPennies {
     constructor(){
         owner = msg.sender;
         lastUpdatedTime = block.timestamp;
-        timeLimit = 5 minutes;
+        //timeLimit = 5 minutes;
+        timeLimit = 20 seconds;
     }
 
     /***
@@ -90,9 +91,9 @@ contract MatchingPennies {
         if(!players[msg.sender].used){
             players[msg.sender].addr = msg.sender;
             players[msg.sender].used = true;
-            players[msg.sender].balance += msg.value - HAND_FEE;
-            contractBalance += HAND_FEE;
         }
+        players[msg.sender].balance += msg.value - HAND_FEE;
+        contractBalance += HAND_FEE;
         players[msg.sender].joined = true;
         seats[seatNumber] = msg.sender;
         gameState = State.waitPlayers;
@@ -258,10 +259,12 @@ contract MatchingPennies {
                 result = winnerIsB();
             }
         }
+        dataReset();
+        gameState = State.waitPlayers;
         return result;
     }
 
-    function checkExpiration() internal view returns (bool isExpired){
+    function checkExpiration() public view returns (bool isExpired){
         if(block.timestamp >= lastUpdatedTime + timeLimit){
             return true;
         }else{
@@ -292,6 +295,7 @@ contract MatchingPennies {
         players[msg.sender].balance += 0.05 ether;
         contractBalance -= 0.05 ether;
         gameState = State.waitPlayers;
+        dataReset();
     }
     /***
      * An internal function used to check the winner
@@ -386,8 +390,8 @@ contract MatchingPennies {
     function withdraw() public {
         require(
             gameState == State.roundover || gameState == State.waitPlayers,
-            "You can only withdraw your money during the waitPlayers stage"
-            "the roundover stage or when the game is expired."
+            "You can only withdraw your money at the waitPlayers stage "
+            "and at the roundover stage."
         );
         require(
             players[msg.sender].balance > 0,
