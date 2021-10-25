@@ -63,37 +63,37 @@ contract MatchingPennies {
         timeLimit = 20 seconds;
     }
 
+    function deposit() public payable {
+        players[msg.sender].balance += msg.value - HAND_FEE;
+        contractBalance += HAND_FEE;
+        players[msg.sender].addr = msg.sender;
+        players[msg.sender].used = true;
+    }
+    
+
+
     /***
      * This method provides a function for players to join the game.
      * @param seatNumber either 0 or 1, which is the seat users want to choose to join the game.
      * @return Nothing.
      */
-    function join(uint8 seatNumber) public payable {
+    function join(uint8 seatNumber) public {
         require(
             gameState == State.waitPlayers || gameState == State.roundover,
             "Game is ongoing, please wait for next round."
         );
-        if(players[msg.sender].balance < JETTON){
-            require(
-                msg.value >= (JETTON + HAND_FEE),
-                "You do not have enough balance."
-                "To join the game, you shoud send at least 1.1 ether, where the jetton is 1 ether"
-                "and we takes 0.1 ether as deposit hand fee."
-            );
-        }
+        require(players[msg.sender].balance >= JETTON, 
+            "You do not have enough balance. "
+            "To join the game, you should deposit at least 1.1 ether, where the jetton is 1 ether "
+            "and 0.1 ether would be taken as hand fee."
+        );           
         seatNumber %= 2;
         require(
             seats[seatNumber] == address(0),
             "Sorry, this seat has been occupied."
         );
         require(!players[msg.sender].joined, "Please do not repeat to join!");
-        
-        if(!players[msg.sender].used){
-            players[msg.sender].addr = msg.sender;
-            players[msg.sender].used = true;
-        }
-        players[msg.sender].balance += msg.value - HAND_FEE;
-        contractBalance += HAND_FEE;
+               
         players[msg.sender].joined = true;
         seats[seatNumber] = msg.sender;
         gameState = State.waitPlayers;
