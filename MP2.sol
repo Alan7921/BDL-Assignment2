@@ -352,6 +352,9 @@ contract MatchingPennies {
      * @return a string indicating the identity of the winner in this round.
      */
     function winnerIsB() internal returns (string memory) {
+        require(players[seats[0]].balance >= JETTON,
+            "PlayerA do not have enough balance."
+        );
         players[seats[0]].balance -= JETTON;
         players[seats[1]].balance += JETTON;
         dataReset();
@@ -363,6 +366,9 @@ contract MatchingPennies {
      * @return a string indicating the identity of the winner in this round.
      */
     function winnerIsA() internal returns (string memory) {
+        require(players[seats[1]].balance >= JETTON,
+            "PlayerB do not have enough balance."
+        );        
         players[seats[1]].balance -= JETTON;
         players[seats[0]].balance += JETTON;
         dataReset();
@@ -433,23 +439,4 @@ contract MatchingPennies {
         payable(msg.sender).transfer(amount);
     }
     
-    /***
-     * This method allows oners to withdraw profit.
-     * Money would be sent to the account of owner.
-     * @return Nothing.
-     */    
-    function takeProfit(uint amount) public {
-        require(amount <= contractBalance,
-        "The contract does not gain that much profit."
-        );
-        require(msg.sender == owner,
-        "You do not have access to this profit!"
-        );
-        require(gameState == State.waitPlayers ||
-        gameState == State.roundover,
-        "Game is ongoing."
-        );
-        contractBalance -= amount;
-        payable(msg.sender).transfer(amount);
-    }
 }
