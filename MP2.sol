@@ -57,12 +57,15 @@ contract MatchingPennies {
     
 
     constructor(){
-        owner = msg.sender;
+        owner = msg.sender; // asign the address of owner
         lastUpdatedTime = block.timestamp;
-        //timeLimit = 5 minutes;
-        timeLimit = 20 seconds;
+        timeLimit = 5 minutes;
     }
-
+    
+    /***
+     * This method provides a function for players to deposit ether in this game.
+     * @return Nothing.
+     */
     function deposit() public payable {
         players[msg.sender].balance += msg.value - HAND_FEE;
         contractBalance += HAND_FEE;
@@ -74,6 +77,7 @@ contract MatchingPennies {
     
     /***
      * This method provides a function for players to join the game.
+     * If your balance is less than jetton (1 ether), please deposit first.
      * @param seatNumber either 0 or 1, which is the seat users want to choose to join the game.
      * @return Nothing.
      */
@@ -87,7 +91,7 @@ contract MatchingPennies {
             "To join the game, you should deposit at least 1.1 ether, where the jetton is 1 ether "
             "and 0.1 ether would be taken as hand fee."
         );           
-        seatNumber %= 2;
+        seatNumber %= 2; // make sure that the seatNumber 0 or 1
         require(
             seats[seatNumber] == address(0),
             "Sorry, this seat has been occupied."
@@ -102,7 +106,12 @@ contract MatchingPennies {
             timeUpdate();
         }
     }
-
+    /***
+     * This method provides a function for players to quit the game.
+     * For instance, if you could not wait anouther player or do not want to 
+     * join next round of game.
+     * @return Nothing.
+     */    
     function quit() public{
         require(
             gameState == State.waitPlayers || 
@@ -134,7 +143,7 @@ contract MatchingPennies {
         require(
             !checkExpiration(),
             "Game is expired, please call the endExpiration to restart it."
-        );
+        ); // make sure that the game has not expired
         require(
             gameState == State.makeDecision,
             "You are not allowed to send your commitment other than the second stage."
@@ -152,7 +161,7 @@ contract MatchingPennies {
         players[msg.sender].commitment = commitment;
         players[msg.sender].isCommitted = true;
         
-        timeUpdate();
+        timeUpdate(); // if some player has sent commitment, update the time
 
         if (players[seats[0]].isCommitted && players[seats[1]].isCommitted) {
             gameState = State.verification;
@@ -206,14 +215,14 @@ contract MatchingPennies {
 
     /***
      * This method is used to export the result of game in this round.
-     * @return result, a string that indicates the winner, and whether there is a cheater or both sides cheated in this round.
+     * @return result, a string that indicates the winner.
      */
     function announcement() public returns (string memory result) {
         require(
             gameState == State.announcement,
             "The game of this round has not arrived its announcement stage."
         );
-        players[msg.sender].balance += ANNOUNCEMENT_FEE;
+        players[msg.sender].balance += ANNOUNCEMENT_FEE; // player who call this function would be rewarded
         contractBalance -= ANNOUNCEMENT_FEE;
         gameState = State.roundover;
         result = checkWinner();
@@ -230,11 +239,20 @@ contract MatchingPennies {
         bytes memory b = bytes(fullToken);
         bytes1 b1 = b[b.length - 1];
         return b1;
-    }    
+    } 
 
+    /***
+     * This method is used to update the time.
+     * @return Nothing.
+     */
     function timeUpdate() internal {
         lastUpdatedTime = block.timestamp;
     }
+
+     /***
+     * One player can claim that another player did not response in time to win the game.
+     * @return a string indicating who wins the game.
+     */   
     function timeOut() external returns (string memory result) {
         require (checkExpiration(),
         "There is still time left, you could not claim time out."
@@ -263,7 +281,10 @@ contract MatchingPennies {
         gameState = State.waitPlayers;
         return result;
     }
-
+     /***
+     * This method is used to check whether the game is expired or not.
+     * @return a bool type isExpired, true for expired, false for not.
+     */ 
     function checkExpiration() public view returns (bool isExpired){
         if(block.timestamp >= lastUpdatedTime + timeLimit){
             return true;
@@ -271,8 +292,13 @@ contract MatchingPennies {
             return false;
         }
     }
-    // 
-    function endExpireation() external {
+ 
+     /***
+     * This method is used to end the expiration.
+     * Player who calls this function would be rewarded with 0.05 ether.
+     * @return nothing.
+     */  
+    function endExpiration() external {
 
         require(checkExpiration(), "Game is not expired");
         if(gameState == State.makeDecision){
@@ -297,6 +323,7 @@ contract MatchingPennies {
         gameState = State.waitPlayers;
         dataReset();
     }
+
     /***
      * An internal function used to check the winner
      * @return a string indicating the identity of the winner in this round.
@@ -384,7 +411,6 @@ contract MatchingPennies {
     /***
      * This method allows players to withdraw their money from contract at either waitPlayers stage or roundover stage.
      * Money would be sent to the account of msg.sender.
-     * And at the meantime, withdrawing money means quit from the game.
      * @return Nothing.
      */
     function withdraw() public {
@@ -407,12 +433,21 @@ contract MatchingPennies {
         payable(msg.sender).transfer(amount);
     }
     
+    /***
+     * This method allows oners to withdraw profit.
+     * Money would be sent to the account of owner.
+     * @return Nothing.
+     */    
     function takeProfit(uint amount) public {
         require(amount <= contractBalance,
         "The contract does not gain that much profit."
         );
         require(msg.sender == owner,
         "You do not have access to this profit!"
+        );
+        require(gameState == State.waitPlayers ||
+        gameState == State.roundover,
+        "Game is ongoing."
         );
         contractBalance -= amount;
         payable(msg.sender).transfer(amount);
