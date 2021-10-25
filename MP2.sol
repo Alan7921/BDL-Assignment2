@@ -86,11 +86,14 @@ contract MatchingPennies {
             "Sorry, this seat has been occupied."
         );
         require(!players[msg.sender].joined, "Please do not repeat to join!");
-        players[msg.sender].addr = msg.sender;
-        players[msg.sender].balance += msg.value - HAND_FEE;
-        contractBalance += HAND_FEE;
+        
+        if(!players[msg.sender].used){
+            players[msg.sender].addr = msg.sender;
+            players[msg.sender].used = true;
+            players[msg.sender].balance += msg.value - HAND_FEE;
+            contractBalance += HAND_FEE;
+        }
         players[msg.sender].joined = true;
-        players[msg.sender].used = true;
         seats[seatNumber] = msg.sender;
         gameState = State.waitPlayers;
         if (seats[0] != address(0) && seats[1] != address(0)) {
@@ -109,11 +112,13 @@ contract MatchingPennies {
             msg.sender == seats[0] || msg.sender == seats[1],
             "You are not in the game."
             );
+            
         if(msg.sender == seats[0]){
             delete seats[0];
         }else{
             delete seats[1];
         }
+        players[msg.sender].joined = false;
     }
 
     /***
@@ -389,7 +394,7 @@ contract MatchingPennies {
             "You do not have any ether in you banlance."
         );
         require(
-            players[msg.sender].joined = false,
+            players[msg.sender].joined == false,
             "You have just joined a game, please withdraw you money after this round."
         );
 
