@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
 contract MatchingPennies {
@@ -101,8 +102,7 @@ contract MatchingPennies {
     function quit() public{
         require(
             gameState == State.waitPlayers || 
-            gameState == State.expired ||
-            gameState == roundover,
+            gameState == State.roundover,
             "Game is on going, you are not allowed to quit now."
         );
         require(
@@ -220,7 +220,7 @@ contract MatchingPennies {
      * @param fullToken, a string that users used to generate hash.
      * @return a bytes1 sized value would be returned to represent the number players chose.
      */
-    function getChoice(string calldata fullToken) public pure returns (bytes1) {
+    function getChoice(string calldata fullToken) internal pure returns (bytes1) {
         bytes memory b = bytes(fullToken);
         bytes1 b1 = b[b.length - 1];
         return b1;
@@ -230,7 +230,7 @@ contract MatchingPennies {
         lastUpdatedTime = block.timestamp;
     }
     function timeOut() external returns (string memory result) {
-        require (checkExpiration,
+        require (checkExpiration(),
         "There is still time left, you could not claim time out."
         );
         require(
@@ -256,9 +256,8 @@ contract MatchingPennies {
         return result;
     }
 
-    function checkExpiration() internal returns (bool isExpired){
+    function checkExpiration() internal view returns (bool isExpired){
         if(block.timestamp >= lastUpdatedTime + timeLimit){
-            gameState = State.expired;
             return true;
         }else{
             return false;
@@ -267,19 +266,19 @@ contract MatchingPennies {
     // 
     function endExpireation() external {
 
-        require(checkExpiration, "Game is not expired");
+        require(checkExpiration(), "Game is not expired");
         if(gameState == State.makeDecision){
-            if(seats[0].isCommitted){
-                result = winnerIsA();
-            }else if (seats[1].isCommitted){
-                result = winnerIsB();
+            if(players[seats[0]].isCommitted){
+                 winnerIsA();
+            }else if (players[seats[1]].isCommitted){
+                 winnerIsB();
             }
         }
         if(gameState == State.verification){
-            if(seats[0].verified){
-                result = winnerIsA();
-            }else if(seats[1].verified){
-                result = winnerIsB();
+            if(players[seats[0]].verified){
+                winnerIsA();
+            }else if(players[seats[1]].verified){
+                winnerIsB();
             }
         } 
         if(gameState == State.announcement){
@@ -381,7 +380,7 @@ contract MatchingPennies {
      */
     function withdraw() public {
         require(
-            gameState == State.roundover || gameState == State.waitPlayers || gameState == State.expired,
+            gameState == State.roundover || gameState == State.waitPlayers,
             "You can only withdraw your money during the waitPlayers stage"
             "the roundover stage or when the game is expired."
         );
