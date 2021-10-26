@@ -49,7 +49,7 @@ contract MatchingPennies {
     uint256 public constant JETTON = 1.0 ether; //  jetton is the leasted money needed to join the game
     uint256 public constant ANNOUNCEMENT_FEE = 0.05 ether; // a compensation for player who choose to annouce results
     address owner; // the organizer of this game contract
-    uint contractBalance;
+   
     
     //Expiration
     uint public lastUpdatedTime; // record the timestamp updated in last time 
@@ -68,7 +68,6 @@ contract MatchingPennies {
      */
     function deposit() public payable {
         players[msg.sender].balance += msg.value - HAND_FEE;
-        contractBalance += HAND_FEE;
         if(!players[msg.sender].used){
             players[msg.sender].addr = msg.sender;
             players[msg.sender].used = true;
@@ -223,7 +222,6 @@ contract MatchingPennies {
             "The game of this round has not arrived its announcement stage."
         );
         players[msg.sender].balance += ANNOUNCEMENT_FEE; // player who call this function would be rewarded
-        contractBalance -= ANNOUNCEMENT_FEE;
         gameState = State.roundover;
         result = checkWinner();
         return result;      
@@ -319,7 +317,6 @@ contract MatchingPennies {
             announcement();
         }
         players[msg.sender].balance += 0.05 ether;
-        contractBalance -= 0.05 ether;
         gameState = State.waitPlayers;
         dataReset();
     }
@@ -380,9 +377,6 @@ contract MatchingPennies {
      * @return a string indicating that no one win the game, they both be fined.
      */
     function noWinner() internal returns (string memory) {
-        contractBalance += players[seats[0]].balance;
-        contractBalance += players[seats[1]].balance;
-
         players[seats[1]].balance = 0;
         players[seats[0]].balance = 0;
 
