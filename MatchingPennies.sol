@@ -340,8 +340,6 @@ contract MatchingPennies {
         } else{
             return noWinner();
         }
-
-
     }
 
     /***
@@ -379,7 +377,6 @@ contract MatchingPennies {
     function noWinner() internal returns (string memory) {
         players[seats[1]].balance = 0;
         players[seats[0]].balance = 0;
-
         dataReset();
         return "Both two sides cheated in this round, no one wins the game!";
     }
@@ -431,6 +428,5 @@ contract MatchingPennies {
         uint256 amount = players[msg.sender].balance;
         players[msg.sender].balance = 0;
         payable(msg.sender).transfer(amount);
-    }
-    
+    }   
 }
