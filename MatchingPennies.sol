@@ -95,7 +95,7 @@ contract MatchingPennies {
             "To join the game, you should deposit at least 1.1 ether, where the jetton is 1 ether "
             "and 0.1 ether would be taken as hand fee."
         );           
-        seatNumber %= 2; // make sure that the seatNumber 0 or 1
+        seatNumber %= 2; // make sure that the seatNumber is 0 or 1
         require(
             seats[seatNumber] == address(0),
             "Sorry, this seat has been occupied."
