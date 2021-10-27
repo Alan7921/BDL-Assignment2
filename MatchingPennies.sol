@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
+// @author Xin S2176116 at UoE
 contract MatchingPennies {
     // create a struct to store the releated info of each player
     struct player {
@@ -54,6 +55,11 @@ contract MatchingPennies {
     uint public lastUpdatedTime; // record the timestamp updated in last time 
     uint public timeLimit; // a limitation to each stage
     
+
+    //Events
+    event Winner(address winnerAddr, string message);
+    event CheaterDetected (address cheaterAddr, string message);
+    event AbnormalResult(string message);
 
     constructor(){
         owner = msg.sender; // asign the address of owner
@@ -216,15 +222,14 @@ contract MatchingPennies {
      * This method is used to export the result of game in this round.
      * @return result, a string that indicates the winner.
      */
-    function announcement() public returns (string memory result) {
+    function announcement() public {
         require(
             gameState == State.announcement,
             "The game of this round has not arrived its announcement stage."
         );
         players[msg.sender].balance += ANNOUNCEMENT_FEE; // player who call this function would be rewarded
         gameState = State.roundover;
-        result = checkWinner();
-        return result;      
+        checkWinner();     
     }
 
     /***
@@ -250,7 +255,12 @@ contract MatchingPennies {
      * One player can claim that another player did not response in time to win the game.
      * @return a string indicating who wins the game.
      */   
-    function timeOut() external returns (string memory result) {
+    function timeOut() external {
+        require (gameState != State.waitPlayers &&
+        gameState != State.roundover,
+        "If game expired at waiting players stage or roundover stage, "
+        "please wait for the join of next player, it would update the timestamp."
+        );
         require (checkExpiration(),
         "There is still time left, you could not claim time out."
         );
@@ -261,22 +271,21 @@ contract MatchingPennies {
         if(gameState == State.makeDecision){
             require(players[msg.sender].isCommitted);
             if(msg.sender == seats[0]){
-                result = winnerIsA();
+                winnerIsA();
             }else{
-                result = winnerIsB();
+                winnerIsB();
             }
         }
         if(gameState == State.verification){
             require(players[msg.sender].verified);
             if(msg.sender == seats[0]){
-                result = winnerIsA();
+                winnerIsA();
             }else{
-                result = winnerIsB();
+                winnerIsB();
             }
         }
         dataReset();
         gameState = State.waitPlayers;
-        return result;
     }
 
      /***
@@ -325,20 +334,25 @@ contract MatchingPennies {
      * An internal function used to check the winner
      * @return a string indicating the identity of the winner in this round.
      */
-    function checkWinner() internal returns (string memory) {
+    function checkWinner() internal {
         
         if (!players[seats[0]].isValid && players[seats[1]].isValid) {
-            return winnerIsB();
+             emit CheaterDetected (seats[0], "Player A at this address cheated in this round.");             
+             winnerIsB();
         } else if (players[seats[0]].isValid && !players[seats[1]].isValid) {
-            return winnerIsA();
+             emit CheaterDetected (seats[1], "Player B at this address cheated in this round.");             
+             winnerIsA();
         } else if (players[seats[0]].isValid && players[seats[1]].isValid) {
             if (players[seats[0]].choice == players[seats[1]].choice) {
-                return winnerIsB();
+                 winnerIsB();
             } else {
-                return winnerIsA();
+                 winnerIsA();
             }            
         } else{
-            return noWinner();
+            emit AbnormalResult("Two sides cheated, No one wins in this round.");        
+            emit CheaterDetected (seats[0], "Player A at this address cheated in this round.");
+            emit CheaterDetected (seats[1], "Player B at this address cheated in this round.");
+            noWinner();
         }
     }
 
@@ -346,39 +360,43 @@ contract MatchingPennies {
      * An internal function used if playerB win the game.
      * @return a string indicating the identity of the winner in this round.
      */
-    function winnerIsB() internal returns (string memory) {
+    function winnerIsB() internal {
         require(players[seats[0]].balance >= JETTON,
             "PlayerA do not have enough balance."
         );
         players[seats[0]].balance -= JETTON;
         players[seats[1]].balance += JETTON;
-        dataReset();
-        return "Player_B wins the game!";
+        
+        emit Winner(seats[1], "Player B wins in this round.");
+        
+        dataReset();  
     }
 
     /***
      * An internal function used if playerA win the game.
      * @return a string indicating the identity of the winner in this round.
      */
-    function winnerIsA() internal returns (string memory) {
+    function winnerIsA() internal {
         require(players[seats[1]].balance >= JETTON,
             "PlayerB do not have enough balance."
         );        
         players[seats[1]].balance -= JETTON;
         players[seats[0]].balance += JETTON;
+        
+        emit Winner(seats[0], "Player A wins in this round.");
+
         dataReset();
-        return "Player_A wins the game!";
     }
 
     /***
      * An internal function used if both the two sides cheated in this round.
      * @return a string indicating that no one win the game, they both be fined.
      */
-    function noWinner() internal returns (string memory) {
+    function noWinner() internal {
         players[seats[1]].balance = 0;
         players[seats[0]].balance = 0;
+             
         dataReset();
-        return "Both two sides cheated in this round, no one wins the game!";
     }
 
     /***
