@@ -68,7 +68,7 @@ contract MatchingPennies {
     function deposit() public payable {
         players[msg.sender].balance += msg.value - HAND_FEE;
         if(!players[msg.sender].used){
-            players[msg.sender].addr = msg.sender;
+            players[msg.sender].addr = msg.sender; // record the address if new user deposits
             players[msg.sender].used = true;
         }
     }
@@ -278,7 +278,7 @@ contract MatchingPennies {
         gameState = State.waitPlayers;
         return result;
     }
-    
+
      /***
      * This method is used to check whether the game is expired or not.
      * @return a bool type isExpired, true for expired, false for not.
