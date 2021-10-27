@@ -42,7 +42,6 @@ contract MatchingPennies {
     //array to show which address is in which seat, seats[0] refers to playerA, seats[1] refers to playerB
     address[2] seats;
 
-    
 
     // fee
     uint256 public constant HAND_FEE = 0.1 ether; // hand fee would be taken when player deposits ether into contract
@@ -105,6 +104,7 @@ contract MatchingPennies {
             timeUpdate();
         }
     }
+
     /***
      * This method provides a function for players to quit the game.
      * For instance, if you could not wait anouther player or do not want to 
@@ -227,7 +227,6 @@ contract MatchingPennies {
         return result;      
     }
 
-
     /***
      * This method is used to get the number from the original string players sent.
      * @param fullToken, a string that users used to generate hash.
@@ -279,6 +278,7 @@ contract MatchingPennies {
         gameState = State.waitPlayers;
         return result;
     }
+    
      /***
      * This method is used to check whether the game is expired or not.
      * @return a bool type isExpired, true for expired, false for not.
