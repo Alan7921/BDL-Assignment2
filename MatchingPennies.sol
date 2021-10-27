@@ -45,9 +45,11 @@ contract MatchingPennies {
 
 
     // fee
-    uint256 public constant HAND_FEE = 0.1 ether; // hand fee would be taken when player deposits ether into contract
-    uint256 public constant JETTON = 1.0 ether; //  jetton is the leasted money needed to join the game
-    uint256 public constant ANNOUNCEMENT_FEE = 0.05 ether; // a compensation for player who choose to annouce results
+    uint256 public constant JETTON = 1.0 ether; //  jetton is the leasted money needed to join the game.    
+    uint256 public constant HAND_FEE = 0.05 ether; // hand fee would be taken when player deposits ether into contract.
+    uint256 public constant JOIN_FEE = 0.05 ether;// join fee would be taken whenever.
+    uint256 public constant ANNOUNCEMENT_FEE = 0.05 ether; // a compensation for player who choose to annouce results.
+    uint256 public constant Expiration_FEE = 0.05 ether; // reward for who end the expiration.
     address owner; // the organizer of this game contract
    
     //Fairness Concern
@@ -74,6 +76,9 @@ contract MatchingPennies {
      * @return Nothing.
      */
     function deposit() public payable {
+        require(msg.value >= HAND_FEE, 
+            "The deposit would take 0.05 ether as hand fee, please deposit at least 0.1 ether."
+        );
         players[msg.sender].balance += msg.value - HAND_FEE;
         if(!players[msg.sender].used){
             players[msg.sender].addr = msg.sender; // record the address if new user deposits
@@ -92,10 +97,10 @@ contract MatchingPennies {
             gameState == State.waitPlayers || gameState == State.roundover,
             "Game is ongoing, please wait for next round."
         );
-        require(players[msg.sender].balance >= JETTON, 
+        require(players[msg.sender].balance >= JETTON + JOIN_FEE, 
             "You do not have enough balance. "
-            "To join the game, you should deposit at least 1.1 ether, where the jetton is 1 ether "
-            "and 0.1 ether would be taken as hand fee."
+            "To join the game, you need to ensure that you have at least 1.05 ether, where the jetton is 1 ether "
+            "and the 0.05 ether would be taken as a join fee."
         );           
         seatNumber %= 2; // make sure that the seatNumber is 0 or 1
         require(
@@ -311,12 +316,17 @@ contract MatchingPennies {
  
      /***
      * This method is used to end the expiration.
-     * Player who calls this function would be rewarded with 0.05 ether.
+     * Player who calls this function would be rewarded with 0.1 ether.
      * @return nothing.
      */  
     function endExpiration() external {
 
         require(checkExpiration(), "Game is not expired");
+        
+        players[seats[0]].balance -= JOIN_FEE;
+        players[seats[1]].balance -= JOIN_FEE;
+        players[msg.sender].balance += Expiration_FEE;        
+       
         if(gameState == State.makeDecision){
             if(players[seats[0]].isCommitted){
                  winnerIsA();
@@ -334,7 +344,7 @@ contract MatchingPennies {
         if(gameState == State.announcement){
             announcement();
         }
-        players[msg.sender].balance += 0.05 ether;
+
         gameState = State.waitPlayers;
         dataReset();
     }
