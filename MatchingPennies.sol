@@ -50,6 +50,8 @@ contract MatchingPennies {
     uint256 public constant ANNOUNCEMENT_FEE = 0.05 ether; // a compensation for player who choose to annouce results
     address owner; // the organizer of this game contract
    
+    //Fairness Concern
+    uint uselessVariable ;
     
     //Expiration
     uint public lastUpdatedTime; // record the timestamp updated in last time 
@@ -101,10 +103,17 @@ contract MatchingPennies {
             "Sorry, this seat has been occupied."
         );
         require(!players[msg.sender].joined, "Please do not repeat to join!");
-               
+        
+        if (seats[0] == address(0) && seats[1] == address(0)) {
+            for(uint64 i=0;i<6;i++){
+                uselessVariable += i;  
+            }
+        }
+
         players[msg.sender].joined = true;
         seats[seatNumber] = msg.sender;
         gameState = State.waitPlayers;
+
         if (seats[0] != address(0) && seats[1] != address(0)) {
             gameState = State.makeDecision;
             timeUpdate();
