@@ -441,6 +441,24 @@ contract MatchingPennies {
         delete seats[0];
         delete seats[1];
     }
+    
+    /***
+     * This method allows players to check the state of game.
+     * @return currentState.
+     */
+    function checkState() external returns (string memory currentState) {
+        if (gameState == State.waitPlayers){
+            return "Waiting for players."
+        }else if (gameState == State.makeDecision){
+            return "Please send your commitment."
+        }else if (gameState == State.verification){
+            return "Please send salt and option."
+        }else if (gameState == State.announcement){
+            return "Please call the announcement."
+        }else {
+            return "Game over in this round."
+        }
+    }
 
     /***
      * This method allows players to withdraw their money from contract at either waitPlayers stage or roundover stage.
@@ -465,5 +483,5 @@ contract MatchingPennies {
         uint256 amount = players[msg.sender].balance;
         players[msg.sender].balance = 0;
         payable(msg.sender).transfer(amount);
-    }   
+    }
 }
