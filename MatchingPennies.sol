@@ -446,17 +446,17 @@ contract MatchingPennies {
      * This method allows players to check the state of game.
      * @return currentState.
      */
-    function checkState() external returns (string memory currentState) {
+    function checkState() external view returns (string memory currentState) {
         if (gameState == State.waitPlayers){
-            return "Waiting for players."
+            return "Waiting for players.";
         }else if (gameState == State.makeDecision){
-            return "Please send your commitment."
+            return "Please send your commitment.";
         }else if (gameState == State.verification){
-            return "Please send salt and option."
+            return "Please send salt and option.";
         }else if (gameState == State.announcement){
-            return "Please call the announcement."
+            return "Please call the announcement.";
         }else {
-            return "Game over in this round."
+            return "Game over in this round.";
         }
     }
 
