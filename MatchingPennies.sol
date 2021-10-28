@@ -40,18 +40,26 @@ contract MatchingPennies {
 
     // use a map to store the details of players which would be more efficient than an player array
     mapping(address => player) public players;
-    //array to record which address is in which seat, seats[0] refers to player A, seats[1] refers to player B
+    //array to record which address in which seat, seats[0] refers to player A
+    //seats[1] refers to player B
     address[2] seats;
 
 
     // fee
-    uint256 public constant JETTON = 1.0 ether; //the least money needed to as jetton in the game   
-    uint256 public constant HAND_FEE = 0.05 ether; //would be taken when player deposits ether into contract
-    uint256 public constant JOIN_FEE = 0.05 ether;//would be taken whenever a player join a game
-    uint256 public constant ANNOUNCEMENT_FEE = 0.05 ether; // a compensation for player who choose to annouce results
-    uint256 public constant Expiration_FEE = 0.05 ether; // reward for who end the expiration
-    address owner; // the organizer of this game contract
+    uint256 public constant JETTON = 1.0 ether; 
+    //the least money needed to as jetton in the game   
+    uint256 public constant HAND_FEE = 0.05 ether; 
+    //would be taken when player deposits ether into contract
+    uint256 public constant JOIN_FEE = 0.05 ether;
+    //would be taken whenever a player join a game
+    uint256 public constant ANNOUNCEMENT_FEE = 0.05 ether; 
+    // a compensation for player who choose to annouce results
+    uint256 public constant Expiration_FEE = 0.05 ether; 
+    // reward for who end the expiration
+    address owner; 
+    // the organizer of this game contract
    
+
     //Fairness Concern
     uint wasteVariable; // would be used to realize fairness between players
     
@@ -61,9 +69,12 @@ contract MatchingPennies {
     
 
     //Events
-    event Winner(address winnerAddr, string message); //record the address of winner in log
-    event CheaterDetected (address cheaterAddr, string message);//record the address of cheater in log
-    event AbnormalResult(string message);//record abnormal results like both cheated
+    event Winner(address winnerAddr, string message); 
+    //record the address of winner in log
+    event CheaterDetected (address cheaterAddr, string message);
+    //record the address of cheater in log
+    event AbnormalResult(string message);
+    //record abnormal results like both cheated
 
     constructor(){
         owner = msg.sender; // asign the address of owner
@@ -99,8 +110,8 @@ contract MatchingPennies {
         );
         require(players[msg.sender].balance >= JETTON + JOIN_FEE, 
             "You do not have enough balance. "
-            "To join the game, you need to ensure that you have at least 1.05 ether, where the jetton is 1 ether "
-            "and the 0.05 ether would be taken as a join fee."
+            "To join the game, you need to ensure that you have at least 1.05 ether "
+            "where the jetton is 1 ether and the 0.05 ether would be taken as a join fee."
         );           
         seatNumber %= 2; // make sure that the seatNumber is 0 or 1
         require(
@@ -111,8 +122,8 @@ contract MatchingPennies {
         
         if (seats[0] == address(0) && seats[1] == address(0)) {
             for(uint64 i=0;i<6;i++){
-                wasteVariable += i;  // to make sure that first player pay equal gas fee as second player
-            }
+                wasteVariable += i;  
+            }// to make sure that first player pay equal gas fee as second player
         }
 
         players[msg.sender].joined = true;
@@ -188,10 +199,12 @@ contract MatchingPennies {
 
     /***
      * This method is used to verify the committed value from players.
-     * Any player who could not provides a corresponding value which could be used to get an exactly same hash as they sent at last stage,
+     * Any player who could not provides a corresponding value 
+     * which could be used to get an exactly same hash as they sent at last stage,
      * would be punished with a fine, and they would lose the game.
-     * Besides, especially for playerA, if he sent a hash culculated from nounce + number other than 0 or 1, would also be regarded
-     * as cheating behavior.
+     * Besides, especially for playerA, 
+     * if he sent a hash culculated from nounce + number other than 0 or 1, 
+     * what he did would also be regarded as cheating behavior.
      * @param origin, a string that used to generate hash value at last stage,
      * an example:"9f74e042264bedfd27e031467271541dbb991696d1428527b6d9a0e5cc793f58big1".
      * @return Nothing.
@@ -240,7 +253,8 @@ contract MatchingPennies {
             gameState == State.announcement,
             "The game of this round has not arrived its announcement stage."
         );
-        players[msg.sender].balance += ANNOUNCEMENT_FEE; // player who call this function would be rewarded
+        players[msg.sender].balance += ANNOUNCEMENT_FEE; 
+        // player who call this function would be rewarded
         gameState = State.roundover;
         timeUpdate();// if someone has annouced the result, update the time
         checkWinner();     
@@ -461,7 +475,8 @@ contract MatchingPennies {
     }
 
     /***
-     * This method allows players to withdraw their money from contract at either waitPlayers stage or roundover stage.
+     * This method allows players to withdraw their money from contract 
+     * at either waitPlayers stage or roundover stage.
      * Money would be sent to the account of msg.sender.
      * @return Nothing.
      */
