@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
-// @author Xin S2176116 at UoE
+// @author Xin S2176116 at UoE 2021/10/28
 contract MatchingPennies {
     // create a struct to store the releated info of each player
     struct player {
