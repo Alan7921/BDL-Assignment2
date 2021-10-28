@@ -19,13 +19,13 @@ contract MatchingPennies {
         bytes1 choice;
         // whether the player has sent his/her commitment
         bool isCommitted;
-        // whether the commitment matches with the committed value player sent
+        // whether the commitment matches the committed nonce and option player sent
         bool isValid;
         // whether this player has been verified
         bool verified;
     }
 
-    // create two enum types to present that game is in which stage and whether there is someone who tried to cheat
+    // create an enum type to present the stage of current game
     enum State {
         waitPlayers,
         makeDecision,
@@ -38,32 +38,32 @@ contract MatchingPennies {
     State public gameState = State.waitPlayers;
 
 
-    // use a mapping to store the details of each player
+    // use a map to store the details of players which would be more efficient than an player array
     mapping(address => player) public players;
-    //array to show which address is in which seat, seats[0] refers to playerA, seats[1] refers to playerB
+    //array to record which address is in which seat, seats[0] refers to player A, seats[1] refers to player B
     address[2] seats;
 
 
     // fee
-    uint256 public constant JETTON = 1.0 ether; //  jetton is the leasted money needed to join the game.    
-    uint256 public constant HAND_FEE = 0.05 ether; // hand fee would be taken when player deposits ether into contract.
-    uint256 public constant JOIN_FEE = 0.05 ether;// join fee would be taken whenever.
-    uint256 public constant ANNOUNCEMENT_FEE = 0.05 ether; // a compensation for player who choose to annouce results.
-    uint256 public constant Expiration_FEE = 0.05 ether; // reward for who end the expiration.
+    uint256 public constant JETTON = 1.0 ether; //the least money needed to as jetton in the game   
+    uint256 public constant HAND_FEE = 0.05 ether; //would be taken when player deposits ether into contract
+    uint256 public constant JOIN_FEE = 0.05 ether;//would be taken whenever a player join a game
+    uint256 public constant ANNOUNCEMENT_FEE = 0.05 ether; // a compensation for player who choose to annouce results
+    uint256 public constant Expiration_FEE = 0.05 ether; // reward for who end the expiration
     address owner; // the organizer of this game contract
    
     //Fairness Concern
-    uint uselessVariable ;
+    uint wasteVariable; // would be used to realize fairness between players
     
     //Expiration
-    uint public lastUpdatedTime; // record the timestamp updated in last time 
+    uint public lastUpdatedTime; // record the timestamp updated in last time
     uint public timeLimit; // a limitation to each stage
     
 
     //Events
-    event Winner(address winnerAddr, string message);
-    event CheaterDetected (address cheaterAddr, string message);
-    event AbnormalResult(string message);
+    event Winner(address winnerAddr, string message); //record the address of winner in log
+    event CheaterDetected (address cheaterAddr, string message);//record the address of cheater in log
+    event AbnormalResult(string message);//record abnormal results like both cheated
 
     constructor(){
         owner = msg.sender; // asign the address of owner
@@ -77,7 +77,7 @@ contract MatchingPennies {
      */
     function deposit() public payable {
         require(msg.value >= HAND_FEE, 
-            "The deposit would take 0.05 ether as hand fee, please deposit at least 0.1 ether."
+            "The deposit would take 0.05 ether as hand fee, please send at least 0.05 ether."
         );
         players[msg.sender].balance += msg.value - HAND_FEE;
         if(!players[msg.sender].used){
@@ -88,7 +88,7 @@ contract MatchingPennies {
     
     /***
      * This method provides a function for players to join the game.
-     * If your balance is less than jetton (1 ether), please deposit first.
+     * If your balance is less than jetton + join fee (1.05 ether), please deposit first.
      * @param seatNumber either 0 or 1, which is the seat users want to choose to join the game.
      * @return Nothing.
      */
@@ -111,7 +111,7 @@ contract MatchingPennies {
         
         if (seats[0] == address(0) && seats[1] == address(0)) {
             for(uint64 i=0;i<6;i++){
-                uselessVariable += i;  
+                wasteVariable += i;  // to make sure that first player pay equal gas fee as second player
             }
         }
 
@@ -127,8 +127,8 @@ contract MatchingPennies {
 
     /***
      * This method provides a function for players to quit the game.
-     * For instance, if you could not wait anouther player or do not want to 
-     * join next round of game.
+     * For instance, if you do not want to wait anouther player or do not want to 
+     * join next round of game, you can just quit the game.
      * @return Nothing.
      */    
     function quit() public{
@@ -161,7 +161,7 @@ contract MatchingPennies {
     function sendCommitment(bytes32 commitment) public {
         require(
             !checkExpiration(),
-            "Game is expired, please call the endExpiration to restart it."
+            "Game is expired, who calls the endExpiration to end the expiration woul be rewarded."
         ); // make sure that the game has not expired
         require(
             gameState == State.makeDecision,
@@ -180,10 +180,9 @@ contract MatchingPennies {
         players[msg.sender].commitment = commitment;
         players[msg.sender].isCommitted = true;
         
-        timeUpdate(); // if some player has sent commitment, update the time
-
         if (players[seats[0]].isCommitted && players[seats[1]].isCommitted) {
             gameState = State.verification;
+            timeUpdate(); // if both players have sent commitment, update the time
         }
     }
 
@@ -191,7 +190,7 @@ contract MatchingPennies {
      * This method is used to verify the committed value from players.
      * Any player who could not provides a corresponding value which could be used to get an exactly same hash as they sent at last stage,
      * would be punished with a fine, and they would lose the game.
-     * Besides, especially for playerA, if he sent a hash culculated from nounce+ number other than 0 or 1, would also be regarded
+     * Besides, especially for playerA, if he sent a hash culculated from nounce + number other than 0 or 1, would also be regarded
      * as cheating behavior.
      * @param origin, a string that used to generate hash value at last stage,
      * an example:"9f74e042264bedfd27e031467271541dbb991696d1428527b6d9a0e5cc793f58big1".
@@ -226,15 +225,15 @@ contract MatchingPennies {
         } 
         
         players[msg.sender].verified = true;
-        timeUpdate();
         if (players[seats[0]].verified && players[seats[1]].verified) {
             gameState = State.announcement;
+            timeUpdate();// if both players have revealed options, update the time
         }
     }
 
     /***
      * This method is used to export the result of game in this round.
-     * @return result, a string that indicates the winner.
+     * @return Nothing.
      */
     function announcement() public {
         require(
@@ -243,13 +242,14 @@ contract MatchingPennies {
         );
         players[msg.sender].balance += ANNOUNCEMENT_FEE; // player who call this function would be rewarded
         gameState = State.roundover;
+        timeUpdate();// if someone has annouced the result, update the time
         checkWinner();     
     }
 
     /***
      * This method is used to get the number from the original string players sent.
      * @param fullToken, a string that users used to generate hash.
-     * @return a bytes1 sized value would be returned to represent the number players chose.
+     * @return a bytes1 value would be returned as the option of players.
      */
     function getChoice(string calldata fullToken) internal pure returns (bytes1) {
         bytes memory b = bytes(fullToken);
@@ -267,7 +267,7 @@ contract MatchingPennies {
 
      /***
      * One player can claim that another player did not response in time to win the game.
-     * @return a string indicating who wins the game.
+     * @return Nothing.
      */   
     function timeOut() external {
         require (gameState != State.waitPlayers &&
@@ -316,7 +316,7 @@ contract MatchingPennies {
  
      /***
      * This method is used to end the expiration.
-     * Player who calls this function would be rewarded with 0.1 ether.
+     * Users who call this function would be rewarded with 0.1 ether.
      * @return nothing.
      */  
     function endExpiration() external {
@@ -351,7 +351,7 @@ contract MatchingPennies {
 
     /***
      * An internal function used to check the winner
-     * @return a string indicating the identity of the winner in this round.
+     * @return Nothing.
      */
     function checkWinner() internal {
         
@@ -377,7 +377,7 @@ contract MatchingPennies {
 
     /***
      * An internal function used if playerB win the game.
-     * @return a string indicating the identity of the winner in this round.
+     * @return Nothing.
      */
     function winnerIsB() internal {
         require(players[seats[0]].balance >= JETTON,
@@ -393,7 +393,7 @@ contract MatchingPennies {
 
     /***
      * An internal function used if playerA win the game.
-     * @return a string indicating the identity of the winner in this round.
+     * @return Nothing.
      */
     function winnerIsA() internal {
         require(players[seats[1]].balance >= JETTON,
@@ -409,7 +409,7 @@ contract MatchingPennies {
 
     /***
      * An internal function used if both the two sides cheated in this round.
-     * @return a string indicating that no one win the game, they both be fined.
+     * @return Nothing.
      */
     function noWinner() internal {
         players[seats[1]].balance = 0;
